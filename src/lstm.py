@@ -251,7 +251,7 @@ def result_eva (loss,val_loss,acc,val_acc):
 
 
 
-Y_pred = model.predict([X_test_tx,X_test_ky,X_test_lc], batch_size=64, verbose=2)
+Y_pred = model.predict([X_test_tx], batch_size=64, verbose=2)
 Y_pred = np.argmax(Y_pred,axis=1)
 
 pred_df = pd.DataFrame(Y_pred, columns=['target'])
