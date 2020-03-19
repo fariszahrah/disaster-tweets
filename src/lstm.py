@@ -210,18 +210,50 @@ lstm1_1 = LSTM(128,return_sequences = True)(dropout1)
 lstm1_2 = LSTM(128,return_sequences = True)(lstm1_1)
 lstm1_2a = LSTM(128,return_sequences = True)(lstm1_2)
 lstm1_3 = LSTM(128)(lstm1_2a)
-dropout = Dropout(0.8)(lstm1_3)
+res = Reshape((-1, X_train_tx.shape[1], 100))(lstm1_3)
+conv1 = Conv2D(100, (3,3), padding='same',activation="relu")(res)
+pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
+flat1 = Flatten()(pool1)
+
+input2 = Input(shape=(max_words_ky,))
+embedding_layer2 = Embedding(top_word, 100, weights=[embedding_matrix], input_length=max_words_ky, trainable=False)(input2)
+lstm2_1 = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(embedding_layer2)
+lstm2_1a = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm2_1)
+lstm2_1b = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm2_1a)
+res2 = Reshape((-1, X_train_ky.shape[1], 100))(lstm2_1b)
+conv2 = Conv2D(100, (3,3), padding='same',activation="relu")(res2)
+pool2 = MaxPooling2D(pool_size=(2,2))(conv2)
+flat2 = Flatten()(pool2)
+
+input3 = Input(shape=(max_words_lc,))
+embedding_layer3 = Embedding(top_word, 100, weights=[embedding_matrix], input_length=max_words_lc, trainable=False)(input3)
+lstm3_1 = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(embedding_layer3)
+lstm3_1a = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm3_1)
+lstm3_1b = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm3_1a)
+res3 = Reshape((-1, X_train_lc.shape[1], 100))(lstm3_1b)
+conv3 = Conv2D(100, (3,3), padding='same',activation="relu")(res3)
+pool3 = MaxPooling2D(pool_size=(2,2))(conv3)
+flat3 = Flatten()(pool3)
+
+
+
+merge = concatenate([flat1, flat2, flat3])
+
+
+dropout = Dropout(0.4)(merge)
 dense1 = Dense(256, activation='relu')(dropout)
 dense2 = Dense(128, activation='relu')(dense1)
 output = Dense(2, activation='softmax')(dense2)
+model = Model(inputs=[input1,input2,input3], outputs=output)
+model.summary()
 
-model = Model(inputs=[input1], outputs=output)
+
 
 model.compile(loss="binary_crossentropy", optimizer="adadelta",
               metrics=["accuracy"])
 
 es = EarlyStopping(monitor='val_loss', mode='min',verbose=1, patience = 4)
-history = model.fit([X_train_tx], Y_train, validation_split=0.2, epochs=30, batch_size=64, verbose=2, callbacks=[es])
+history = model.fit([X_train_tx,X_train_ky,X_train_lc], Y_train, validation_split=0.2, epochs=30, batch_size=64, verbose=2, callbacks=[es])
 
 
 
@@ -258,4 +290,4 @@ pred_df = pd.DataFrame(Y_pred, columns=['target'])
 result = pd.concat([test_df,pred_df], axis=1, join='outer', ignore_index=False, keys=None, sort = False)
 result = result[['id','target']]
 
-result.to_csv('../submissions/lstm_textonly_submission.csv',index=False)
+result.to_csv('../submissions/lstm_text_kw_loc_submission.csv',index=False)
