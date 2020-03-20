@@ -210,13 +210,12 @@ lstm1_1 = LSTM(128,return_sequences = True)(dropout1)
 lstm1_2 = LSTM(128,return_sequences = True)(lstm1_1)
 lstm1_2a = LSTM(128,return_sequences = True)(lstm1_2)
 lstm1_3 = LSTM(128)(lstm1_2a)
-res = Reshape((-1, X_train_tx.shape[1], 100))(lstm1_3)
-conv1 = Conv2D(100, (3,3), padding='same',activation="relu")(res)
-pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
-flat1 = Flatten()(pool1)
+dropout = Dropout(0.8)(lstm1_3)
+flat1 = Dense(256, activation='relu')(dropout)
+print('compiled tweet text layers')
 
 input2 = Input(shape=(max_words_ky,))
-embedding_layer2 = Embedding(top_word, 100, weights=[embedding_matrix], input_length=max_words_ky, trainable=False)(input2)
+embedding_layer2 = Embedding(top_word, 200, weights=[embedding_matrix], input_length=max_words_ky, trainable=False)(input2)
 lstm2_1 = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(embedding_layer2)
 lstm2_1a = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm2_1)
 lstm2_1b = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm2_1a)
@@ -226,7 +225,7 @@ pool2 = MaxPooling2D(pool_size=(2,2))(conv2)
 flat2 = Flatten()(pool2)
 
 input3 = Input(shape=(max_words_lc,))
-embedding_layer3 = Embedding(top_word, 100, weights=[embedding_matrix], input_length=max_words_lc, trainable=False)(input3)
+embedding_layer3 = Embedding(top_word, 200, weights=[embedding_matrix], input_length=max_words_lc, trainable=False)(input3)
 lstm3_1 = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(embedding_layer3)
 lstm3_1a = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm3_1)
 lstm3_1b = Bidirectional(LSTM(100, return_sequences=True,dropout = 0.2))(lstm3_1a)
@@ -283,7 +282,7 @@ def result_eva (loss,val_loss,acc,val_acc):
 
 
 
-Y_pred = model.predict([X_test_tx], batch_size=64, verbose=2)
+Y_pred = model.predict([X_test_tx,X_test_ky,X_test_lc], batch_size=64, verbose=2)
 Y_pred = np.argmax(Y_pred,axis=1)
 
 pred_df = pd.DataFrame(Y_pred, columns=['target'])
